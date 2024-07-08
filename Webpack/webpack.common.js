@@ -2,16 +2,16 @@ const HTMLWebpackPlugins = require('html-webpack-plugin')
 const { CleanWebpackPlugin } = require('clean-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const path = require('path')
-const webpack = require('webpack') //подключаем webpack для использования встроенного плагина EnvironmentPlugin
+const webpack = require('webpack') // подключаем webpack для использования встроенного плагина EnvironmentPlugin
 
-//в зависимости от того, какой скрипт мы запустили
+// в зависимости от того, какой скрипт мы запустили
 // переменная production получит либо false, либо true
 const production = process.env.NODE_ENV === 'production'
 
 module.exports = {
-	entry: path.resolve(__dirname, '..', './src/webpack.common.js'), //путь до папки src изменился
+	entry: path.resolve(__dirname, '..', './src/index.tsx'), // путь до входного файла src изменился
 	output: {
-		path: path.resolve(__dirname, '..', './dist'), //путь до папки dist изменился
+		path: path.resolve(__dirname, '..', './dist'), // путь до папки dist изменился
 		filename: production
 			? 'static/scripts/[name].[contenthash].js' // добавляем хеш к имени файла, если запускаем в режиме production
 			: 'static/scripts/[name].js',
@@ -50,7 +50,7 @@ module.exports = {
 			{
 				test: /\.(sa|sc|c)ss$/,
 				use: [
-					//в режиме production создаём физический файл в папке dist, в dev режиме добавляем стили в тег style в html-файле
+					// в режиме production создаём физический файл в папке dist, в dev режиме добавляем стили в тег style в html-файле
 					production ? MiniCssExtractPlugin.loader : 'style-loader',
 					{
 						loader: 'css-loader',
@@ -76,18 +76,27 @@ module.exports = {
 	},
 	resolve: {
 		extensions: ['.js', '.jsx', '.tsx', '.ts', '.json'],
+		fallback: {
+			stream: require.resolve('stream-browserify'),
+			buffer: require.resolve('buffer/'),
+			url: require.resolve('url/'), // добавляем полифил для модуля 'url'
+		},
 	},
 	plugins: [
 		new HTMLWebpackPlugins({
-			template: path.resolve(__dirname, '..', './public/index.html'), //путь до папки public изменился
+			template: path.resolve(__dirname, '..', './public/index.html'), // путь до папки public изменился
 		}),
 		new CleanWebpackPlugin(),
 		new MiniCssExtractPlugin({
 			filename: 'static/styles/[name].[contenthash].css',
 		}),
-		//Плагин позволяет установить переменные окружения, можно переопределить переменную из блока script файла package.json
+		// Плагин позволяет установить переменные окружения, можно переопределить переменную из блока script файла package.json
 		new webpack.EnvironmentPlugin({
 			NODE_ENV: 'development', // значение по умолчанию 'development', если переменная process.env.NODE_ENV не передана при вызове сборки
+		}),
+		new webpack.ProvidePlugin({
+			process: 'process/browser',
+			Buffer: ['buffer', 'Buffer'],
 		}),
 	],
 }
